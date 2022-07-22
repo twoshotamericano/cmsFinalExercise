@@ -34,6 +34,7 @@
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
+          {% if session.get("user") %}
           <ul class="navbar-nav">
             <li class="nav-item">
               <a
@@ -52,24 +53,28 @@
               >
             </li>
           </ul>
+          {% endif %}
         </div>
         <ul class="navbar-nav">
+          {% if session.get("user") %}
           <li class="nav-item">
             <a
               class="nav-link active"
               aria-current="page"
-              href="{{url_for('posts')}}"
+              href="{{url_for('logout')}}"
               >Logout</a
             >
           </li>
+          {% else %}
           <li class="nav-item">
             <a
               class="nav-link active"
               aria-current="page"
-              href="{{url_for('posts')}}"
+              href="{{session['auth_url']}}"
               >Login</a
             >
           </li>
+          {% endif %}
         </ul>
       </div>
     </nav>
