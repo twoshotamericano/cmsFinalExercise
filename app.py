@@ -11,6 +11,9 @@ import json
 from objects.Post import Post as BlogPost
 import logger
 import os
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.sql import func
+
 
 #Post=namedtuple("Post","title author created_date")
 data=[
@@ -29,7 +32,37 @@ def get_message(title):
 
 app = Flask(__name__)
 app.config.from_object(app_config)
+db = SQLAlchemy(app)
 Session(app)
+
+class dbPost(db.Model):
+  __tablename__='posts'
+
+  id = db.Column(db.Integer, primary_key=True)
+  title = db.Column(db.String(100), nullable=False)
+  author = db.Column(db.String(100), nullable=False)    
+  created_date = db.Column(db.DateTime(timezone=True),server_default=func.now())
+
+  def __repr__(self):
+         return '<dbPost {}>'.format(self.body)
+
+  def save_changes(self, file=None):
+        # if file:            
+        #     filename = secure_filename(file.filename)
+        #     fileExtension = filename.rsplit('.', 1)[1]
+        #     randomFilename = str(uuid.uuid1())
+        #     filename = randomFilename + '.' + fileExtension
+        #     try:
+        #         blob_client=blob_service.get_blob_client(container=blob_container,blob=filename)
+        #         blob_client.upload_blob(file)
+        #         if self.image_path:
+        #             blob_client=blob_service.get_blob_client(container=blob_container,blob=self.image_path)
+        #             blob_client.delete_blob()
+
+        #     except Exception as err:
+        #         flash(err)
+        #     self.image_path = filename
+      db.session.commit()
 
 from werkzeug.middleware.proxy_fix import ProxyFix
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
@@ -38,14 +71,18 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 @app.route("/list")
 def posts():
   if not session.get("user"):
-      return redirect(url_for("login"))    
+    return redirect(url_for("login"))  
+  else:
+    data=dbPost.query.all()  
   return render_template("list.html",posts=data)
 
 @app.route('/delete')
 def delete():
   try:
     title=request.args['title']
-    clear_message(title)
+    data = dbPost.query.filter_by(title=title).first()
+    db.session.delete(data)
+    db.session.commit()
     return redirect(url_for('posts'))
   except Exception as e:
     app.logger.error(str(e))
@@ -66,7 +103,13 @@ def create():
       elif not created_date:
         flash("crated_date is required")
       else:      
-        data.append(BlogPost(title,author,created_date))
+        post=dbPost()
+        post.title=title
+        post.author=author
+        post.created_date=datetime.datetime.strptime(created_date,'%d/%m/%y')
+
+        db.session.add(post)
+        db.session.commit()
         return redirect(url_for('posts'))       
   except Exception as e:
     app.logger.error(str(e))
@@ -89,17 +132,23 @@ def edit():
       elif not created_date:
         flash("crated_date is required")
       else:
-        data.append(BlogPost(title,author,created_date))
+        post=dbPost()
+        post.title=title
+        post.author=author
+        post.created_date=created_date        
+        db.session.add(post)
+        db.session.commit()
         return redirect(url_for('posts'))
     else:     
-      title=request.args['title']
-      post=get_message(title)
-      clear_message(title)
+      title=request.args['title']             
   except Exception as e:
     app.logger.error(str(e))
     return render_template("error.html",data=str(e))
 
-  return render_template("edit.html",data=post)
+  data=dbPost.query.filter_by(title=title).first()
+  db.session.delete(data)
+  db.session.commit()
+  return render_template("edit.html",data=data)
 
 @app.route("/post")
 def post():

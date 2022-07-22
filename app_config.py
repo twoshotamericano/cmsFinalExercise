@@ -21,6 +21,13 @@ REDIRECT_PATH = "/getAToken"  # Used for forming an absolute URL to your redirec
 # https://developer.microsoft.com/en-us/graph/graph-explorer
 ENDPOINT = 'https://graph.microsoft.com/v1.0/users'  # This resource requires no admin consent
 
+SQL_SERVER = os.environ.get('SQL_SERVER') or 'cms-test-eca.database.windows.net'
+SQL_DATABASE = os.environ.get('SQL_DATABASE') or 'test-cms-ed'
+SQL_USER_NAME = os.environ.get('SQL_USER_NAME') or 'ActuarialDevOps'
+SQL_PASSWORD = os.environ.get('SQL_PASSWORD') or 'Bungee1!'
+SQLALCHEMY_DATABASE_URI = 'mssql+pyodbc://' + SQL_USER_NAME + '@' + SQL_SERVER + ':' + SQL_PASSWORD + '@' + SQL_SERVER + ':1433/' + SQL_DATABASE + '?driver=ODBC+Driver+17+for+SQL+Server'
+SQLALCHEMY_TRACK_MODIFICATIONS = False
+
 # You can find the proper permission names from this document
 # https://docs.microsoft.com/en-us/graph/permissions-reference
 SCOPE = ["User.ReadBasic.All"]
