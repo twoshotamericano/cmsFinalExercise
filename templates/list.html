@@ -1,0 +1,23 @@
+{% extends "layout.html" %} {% block title %}Index{% endblock %} {% block
+content %}
+
+<div class="container-fluid">
+  {% for post in posts %}
+  <div class="row">
+    <div class="card mb-1 mt-1">
+      <div class="card-body">
+        <h5 class="card-title">{{post.title}}</h5>
+        <p class="card-text">{{post['author']}} {{post['created_date']}}</p>
+        <a href="/edit?title={{post['title']}}" class="btn btn-primary"
+          >Update</a
+        >
+        <a href="/delete?title={{post['title']}}" class="btn btn-primary"
+          >Delete</a
+        >
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}
