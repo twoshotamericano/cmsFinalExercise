@@ -6,6 +6,7 @@ import datetime
 from collections import namedtuple
 import json
 from objects.Post import Post as BlogPost
+import logger
 import os
 
 #Post=namedtuple("Post","title author created_date")
@@ -33,55 +34,74 @@ def posts():
 
 @app.route('/delete')
 def delete():
-  title=request.args['title']
-  clear_message(title)
-  return redirect(url_for('posts'))
+  try:
+    title=request.args['title']
+    clear_message(title)
+    return redirect(url_for('posts'))
+  except Exception as e:
+    app.logger.error(str(e))
+    return render_template("error.html",data=str(e))
 
 @app.route('/create/', methods=('GET','POST'))
 def create():
-  if request.method=='POST':
-    title=request.form['title']
-    author=request.form['author']
-    created_date=request.form['created_date']
+  try:
+    if request.method=='POST':
+      title=request.form['title']
+      author=request.form['author']
+      created_date=request.form['created_date']
 
-    if not title:
-      flash("title is required!")
-    elif not author:
-      flash("author is required")
-    elif not created_date:
-      flash("crated_date is required")
-    else:      
-      data.append(BlogPost(title,author,created_date))
-      return redirect(url_for('posts'))       
+      if not title:
+        flash("title is required!")
+      elif not author:
+        flash("author is required")
+      elif not created_date:
+        flash("crated_date is required")
+      else:      
+        data.append(BlogPost(title,author,created_date))
+        return redirect(url_for('posts'))       
+  except Exception as e:
+    app.logger.error(str(e))
+    return render_template("error.html",data=str(e))
  
   return render_template('create.html')
 
 @app.route("/edit",methods=("GET","POST"))
 def edit():
-  if request.method=='POST':
-    title=request.form['title']
-    author=request.form['author']
-    created_date=request.form['created_date']
+  try:
+    if request.method=='POST':
+      title=request.form['title']
+      author=request.form['author']
+      created_date=request.form['created_date']
 
-    if not title:
-      flash("title is required!")
-    elif not author:
-      flash("author is required")
-    elif not created_date:
-      flash("crated_date is required")
-    else:
-      data.append(BlogPost(title,author,created_date))
-      return redirect(url_for('posts'))
-  else:     
-    title=request.args['title']
-    post=get_message(title)
-    clear_message(title)
+      if not title:
+        flash("title is required!")
+      elif not author:
+        flash("author is required")
+      elif not created_date:
+        flash("crated_date is required")
+      else:
+        data.append(BlogPost(title,author,created_date))
+        return redirect(url_for('posts'))
+    else:     
+      title=request.args['title']
+      post=get_message(title)
+      clear_message(title)
+  except Exception as e:
+    app.logger.error(str(e))
+    return render_template("error.html",data=str(e))
 
   return render_template("edit.html",data=post)
 
 @app.route("/post")
 def post():
     return render_template("post.html")
+
+@app.before_request 
+def before_request_callback(): 
+  method = request.method 
+  path = request.path 
+  app.logger.info(f"{method} called on {path} ")
+
 
 
 if __name__=='__main__':
