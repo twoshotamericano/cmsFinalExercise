@@ -31,6 +31,9 @@ app = Flask(__name__)
 app.config.from_object(app_config)
 Session(app)
 
+from werkzeug.middleware.proxy_fix import ProxyFix
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
 @app.route("/")
 @app.route("/list")
 def posts():
@@ -122,7 +125,7 @@ def authorized():
         _save_cache(cache)
     except ValueError:  # Usually caused by CSRF
         pass  # Simply ignore them
-    return redirect(url_for("posts"))
+    return redirect(url_for("posts",_external=True))
 
 @app.route("/logout")
 def logout():
