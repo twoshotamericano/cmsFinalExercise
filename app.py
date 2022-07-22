@@ -1,6 +1,7 @@
 from asyncio.log import logger
 from datetime import datetime
 from os import environ
+from pathlib import Path
 from flask import Flask, render_template,jsonify,flash,redirect,request, url_for,session
 from flask_session import Session  # https://pythonhosted.org/Flask-Session
 import msal
@@ -13,7 +14,14 @@ import logger
 import os
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql import func
+from werkzeug.utils import secure_filename
 
+
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 #Post=namedtuple("Post","title author created_date")
 data=[
@@ -42,6 +50,7 @@ class dbPost(db.Model):
   title = db.Column(db.String(100), nullable=False)
   author = db.Column(db.String(100), nullable=False)    
   created_date = db.Column(db.DateTime(timezone=True),server_default=func.now())
+  filename = db.Column(db.String(100), nullable=False)    
 
   def __repr__(self):
          return '<dbPost {}>'.format(self.body)
@@ -91,7 +100,7 @@ def delete():
 @app.route('/create/', methods=('GET','POST'))
 def create():
   try:
-    if request.method=='POST':
+    if request.method=='POST':     
       title=request.form['title']
       author=request.form['author']
       created_date=request.form['created_date']
@@ -149,6 +158,30 @@ def edit():
   db.session.delete(data)
   db.session.commit()
   return render_template("edit.html",data=data)
+
+@app.route("/upload",methods=("GET","POST"))
+def upload(): 
+  title=request.args['title']
+  if request.method == 'POST':
+      # check if the post request has the file part
+      if 'file' not in request.files:
+          flash('No file part')
+          return redirect(request.url)
+      file = request.files['file']
+      # If the user does not select a file, the browser submits an
+      # empty file without a filename.
+      if file.filename == '':
+          flash('No selected file')
+          return redirect(request.url)
+      if file and allowed_file(file.filename):
+          filename = secure_filename(str(Path(Path.cwd(),file.filename)))
+          file.save(filename)
+          record=dbPost.query.filter_by(title=title).first()
+          record.filename=filename
+          db.session.add(record)
+          db.session.commit()
+          return redirect(url_for('posts'))    
+  return render_template("upload.html",data=title)
 
 @app.route("/post")
 def post():

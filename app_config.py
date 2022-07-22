@@ -33,3 +33,6 @@ SQLALCHEMY_TRACK_MODIFICATIONS = False
 SCOPE = ["User.ReadBasic.All"]
 
 SESSION_TYPE = "filesystem"  # Specifies the token cache should be stored in server-side session
+
+
+UPLOAD_FOLDER = '/path/to/the/uploads'
