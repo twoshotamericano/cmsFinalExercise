@@ -5,8 +5,16 @@ content %}
   {% for post in posts %}
   <div class="row">
     <div class="card mb-1 mt-1">
+      <img
+        src="{{imageSource}}{{post['filename']}}"
+        class="card-img-top"
+        width="50"
+        height="100"
+        alt="..."
+      />
       <div class="card-body">
         <h5 class="card-title">{{post.title}}</h5>
+
         <p class="card-text">{{post['author']}} {{post['created_date']}}</p>
         <a href="/edit?title={{post['title']}}" class="btn btn-primary"
           >Update</a

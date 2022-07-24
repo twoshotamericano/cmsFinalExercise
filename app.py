@@ -15,7 +15,7 @@ import os
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql import func
 from werkzeug.utils import secure_filename
-
+from azure.storage.blob import BlobServiceClient
 
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
@@ -42,6 +42,10 @@ app = Flask(__name__)
 app.config.from_object(app_config)
 db = SQLAlchemy(app)
 Session(app)
+blob_container = app.config['BLOB_CONTAINER']
+storage_url = "https://{}.blob.core.windows.net/".format(app.config['BLOB_ACCOUNT'])
+blob_service = BlobServiceClient(account_url=storage_url, credential=app.config['BLOB_STORAGE_KEY'])
+imageSourceUrl = 'https://'+ app.config['BLOB_ACCOUNT']  + '.blob.core.windows.net/' + app.config['BLOB_CONTAINER']  + '/'
 
 class dbPost(db.Model):
   __tablename__='posts'
@@ -56,22 +60,22 @@ class dbPost(db.Model):
          return '<dbPost {}>'.format(self.body)
 
   def save_changes(self, file=None):
-        # if file:            
-        #     filename = secure_filename(file.filename)
-        #     fileExtension = filename.rsplit('.', 1)[1]
-        #     randomFilename = str(uuid.uuid1())
-        #     filename = randomFilename + '.' + fileExtension
-        #     try:
-        #         blob_client=blob_service.get_blob_client(container=blob_container,blob=filename)
-        #         blob_client.upload_blob(file)
-        #         if self.image_path:
-        #             blob_client=blob_service.get_blob_client(container=blob_container,blob=self.image_path)
-        #             blob_client.delete_blob()
+    if file:            
+        filename = secure_filename(file.filename)
+        fileExtension = filename.rsplit('.', 1)[1]
+        randomFilename = str(uuid.uuid1())
+        filename = randomFilename + '.' + fileExtension
+        try:
+            blob_client=blob_service.get_blob_client(container=blob_container,blob=filename)
+            blob_client.upload_blob(file)
+            if self.image_path:
+                blob_client=blob_service.get_blob_client(container=blob_container,blob=self.image_path)
+                blob_client.delete_blob()
 
-        #     except Exception as err:
-        #         flash(err)
-        #     self.image_path = filename
-      db.session.commit()
+        except Exception as err:
+            flash(err)
+        self.image_path = filename
+    db.session.commit()
 
 from werkzeug.middleware.proxy_fix import ProxyFix
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
@@ -83,7 +87,7 @@ def posts():
     return redirect(url_for("login"))  
   else:
     data=dbPost.query.all()  
-  return render_template("list.html",posts=data)
+  return render_template("list.html",posts=data, imageSource=imageSourceUrl)
 
 @app.route('/delete')
 def delete():
@@ -175,8 +179,20 @@ def upload():
           return redirect(request.url)
       if file and allowed_file(file.filename):
           filename = secure_filename(str(Path(Path.cwd(),file.filename)))
-          file.save(filename)
           record=dbPost.query.filter_by(title=title).first()
+          try:
+                blob_client=blob_service.get_blob_client(container=blob_container,blob=filename)
+                blob_client.upload_blob(file)
+                if record.filename:
+                  try:
+                    blob_client=blob_service.get_blob_client(container=blob_container,blob=record.filename)
+                    blob_client.delete_blob()
+                  except:
+                    pass
+
+          except Exception as err:
+                flash(err)
+          
           record.filename=filename
           db.session.add(record)
           db.session.commit()

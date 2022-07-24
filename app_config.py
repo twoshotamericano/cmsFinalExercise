@@ -34,5 +34,9 @@ SCOPE = ["User.ReadBasic.All"]
 
 SESSION_TYPE = "filesystem"  # Specifies the token cache should be stored in server-side session
 
-
 UPLOAD_FOLDER = '/path/to/the/uploads'
+
+BLOB_ACCOUNT = os.environ.get('BLOB_ACCOUNT') or 'logstoragecms'
+BLOB_STORAGE_KEY = os.environ.get('BLOB_STORAGE_KEY') or 'R6LhDWC+thC9VQe4xTBk88FafjReBQ8INJQhHFvvEIq3tSyksNu4NYrwiCekNFqyFnCodRSYTRDK+AStp+Z00w=='
+BLOB_CONTAINER = os.environ.get('BLOB_CONTAINER') or 'testing-ed'
+BLOB_URL='DefaultEndpointsProtocol=https;AccountName=logstoragecms;AccountKey=R6LhDWC+thC9VQe4xTBk88FafjReBQ8INJQhHFvvEIq3tSyksNu4NYrwiCekNFqyFnCodRSYTRDK+AStp+Z00w==;EndpointSuffix=core.windows.net'
